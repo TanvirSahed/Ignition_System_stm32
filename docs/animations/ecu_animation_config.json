@@ -1,0 +1,156 @@
+{
+  "initialCylinders": 10,
+  "finalCylinders": 10,
+
+  "transitionAfterMs": 8000,
+  "sparkIntervalMs": 650,
+
+  "firingOrder": {
+    "4":  [1, 3, 4, 2],
+    "6":  [1, 5, 3, 6, 2, 4],
+    "8":  [1, 5, 4, 2, 6, 3, 7, 8],
+    "10": [1, 6, 5, 10, 2, 7, 3, 8, 4, 9]
+  },
+
+  "pseudoCode": [
+    "IS_Status IS_UpdateRPM(IgnitionSystem *sys) {",
+    "if (!sys) return IS_ERROR_NULL_PTR;",
+    "unsigned int current_time = __HAL_TIM_GET_COUNTER(sys->cfg.time_base_timer);",
+    "unsigned int current_position = __HAL_TIM_GET_COUNTER(sys->cfg.encoder_timer);",
+
+    "if ((current_time - sys->state.timestamp_last_position >= RPM_SAMPLE_INTERVAL) ||",
+        "(current_time < sys->state.timestamp_last_position && (UINT32_MAX - sys->state.timestamp_last_position + current_time) >= RPM_SAMPLE_INTERVAL)) {",
+
+        "unsigned int delta_pos = (current_position >= sys->state.encoder_last_position)",
+            "? current_position - sys->state.encoder_last_position",
+            ": (0xFFFF - sys->state.encoder_last_position + current_position);",
+
+        "if (delta_pos < ENCODER_MIN_DELTA) {",
+            "sys->state.engine_state = ENGINE_STOPPED;",
+            "sys->state.frequency = 0;",
+            "sys->state.rpm = 0;",
+        "} else {",
+            "sys->state.engine_state = ENGINE_RUNNING;",
+            "sys->state.frequency = sys->state.tim4_frequency;",
+            "sys->state.rpm = sys->state.tim4_frequency * 2; // Half camshaft encoder",
+        "}",
+
+        "sys->state.encoder_last_position = current_position;",
+        "sys->state.timestamp_last_position = current_time;",
+    "}",
+    "return IS_OK;",
+"}",
+"       ",
+"       ",
+"       ",
+
+
+"float batt_voltage = -1.f;",
+"       ",
+"IS_Status IS_CalculatePulseTime(IgnitionSystem *sys) {",
+    "if (!sys) return IS_ERROR_NULL_PTR;",
+    "if (sys->state.rpm == 0) return IS_ERROR_INVALID_STATE;",
+
+    "batt_voltage = Read_BatteryVoltage(sys->cfg.battery_adc)* (V_MAX - V_MIN) / VREF + V_MIN;",
+
+    "if (batt_voltage < 0.0f) return IS_ERROR_INVALID_STATE;",
+
+    "float dwell_time = Lookup_DwellTime(batt_voltage);",
+
+    "double timePerRev = 60.0 / sys->state.rpm; // calcs in seconds and 60 seconds per minute",
+    "double timePerPulse = timePerRev * 1000.0 / ENCODER_TIMER_PPR;//in ms //120;//ENCODER_TIMER_PPR;",
+    "double pulsesNeeded = dwell_time / timePerPulse; // required pulses",
+
+    "sys->state.pulses = (int)(pulsesNeeded + 0.5);",
+    "sys->state.totalTimeMs = sys->state.pulses * timePerPulse;",
+    "return IS_OK;",
+"}",
+"       ",
+"       ",
+"       ",
+"IS_Status IS_ControlCoil(IgnitionSystem *sys) {",
+    "if (!sys)",
+        "return IS_ERROR_NULL_PTR;",
+
+    "if (sys->state.engine_state == ENGINE_STOPPED || sys->state.rpm < CONF_MIN_RPM) {",
+        "for (int i = 0; i < TOTAL_CYLINDERS; ++i) {",
+            "HAL_GPIO_WritePin(sys->cfg.coil_ports[i], sys->cfg.coil_pins[i], GPIO_PIN_RESET);",
+            "sys->state.coil_state[i] = COIL_OFF;",
+        "}",
+        "return IS_OK; // Skip further processing",
+    "}",
+    "uint32_t encoder_pos = __HAL_TIM_GET_COUNTER(sys->cfg.encoder_timer);",
+    "if (sys->state.isCrossed)",
+        "sys->state.encoder_wrapped_position = ENCODER_TIMER_ENGINE_HALF_CYCLE_PULSES + encoder_pos;",
+    "else",
+        "sys->state.encoder_wrapped_position = encoder_pos;",
+
+    "if (sys->state.encoder_wrapped_position >= ENCODER_TIMER_ENGINE_FULL_CYCLE_PULSES) {",
+        "sys->state.encoder_wrapped_position = 0;",
+        "//sys->state.isCrossed = false;",
+    "}",
+    "sys->state.cyl_no = CylinderScheduler_GetCurrent(sys->state.encoder_wrapped_position);",
+    "//sys->state.cyl_no = CylinderScheduler_GetCurrent(encoder_pos);",
+
+    "if (sys->state.cyl_no < 1 || sys->state.cyl_no > TOTAL_CYLINDERS)",
+        "return IS_ERROR_INVALID_STATE;",
+
+    "sys->state.angle = CylinderScheduler_GetIgnitionAngle(sys->state.cyl_no);",
+
+    "// update FSM",
+    "ISM_Update(&fsm, sys->state.encoder_wrapped_position, sys->state.pulses, sys->state.angle, sys->state.cyl_no);",
+
+    "int idx = fsm.current_cylinder - 1;",
+
+    "if (fsm.coil_on) { //fsm says to turn the coil on",
+        "if (sys->state.coil_state[idx] == COIL_OFF) // if coil is off",
+            "sys->state.coil_on_start[idx] = HAL_GetTick(); // tracks time just before turning it on",
+
+        "HAL_GPIO_WritePin(sys->cfg.coil_ports[idx], sys->cfg.coil_pins[idx], GPIO_PIN_SET); // turns on the coil",
+        "sys->state.coil_state[idx] = COIL_ON; //sets the state to on",
+    "} else {",
+        "if (sys->state.coil_state[idx] == COIL_ON)",
+            "sys->state.coil_durations[idx] = HAL_GetTick() - sys->state.coil_on_start[idx]; // if it is on then checks how much time have passed",
+
+        "HAL_GPIO_WritePin(sys->cfg.coil_ports[idx], sys->cfg.coil_pins[idx], GPIO_PIN_RESET);",
+        "sys->state.coil_state[idx] = COIL_OFF;",
+    "}",
+
+    "return IS_OK;",
+"}"
+
+  ],
+
+  "sparkColor": "#facc15",
+  "sparkGlow":  "#fef3c7",
+  "coilOnColor": "#22c55e",
+  "coilOffColor": "#4b5563",
+
+  "rpm": {
+    "base": 1600,
+    "variation": 900
+  },
+
+  "vbat": {
+    "base": 12.4,
+    "variation": 0.9
+  },
+
+  "dwellMs": {
+    "min": 2.2,
+    "max": 4.8
+  },
+
+  "waveform": {
+    "length": 180
+  },
+
+  "encoder": {
+    "crankCycleDeg": 720
+  },
+
+  "sound": {
+    "enabled": false,
+    "volume": 0.22
+  }
+}

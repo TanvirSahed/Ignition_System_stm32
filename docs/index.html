@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ignition System – Project Documentation</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body>
+
+    <!-- ============ HEADER ============ -->
+    <header class="header fade-in">
+        <h1 class="project-title">Ignition System of ECU</h1>
+
+        <p class="project-subtitle">
+            Encoder-Based RPM Measurement • Dynamic Dwell Control (Voltage + RPM) • Multi-Cylinder Ignition Scheduling • Interrupt-Driven ARM Cortex-M4 Firmware • Real-Time State Machine Control 
+        </p>
+
+        <div class="header-btns">
+            <a class="btn-primary" href="https://github.com/TanvirSahed/Ignition_System_stm32.git" target="_blank">GitHub Repository</a>
+            <a class="btn-secondary" href="https://your_main_portfolio.com">Find Me</a>
+        </div>
+    </header>
+
+    <main class="content">
+
+        <!-- ======================================== -->
+        <!--             PROBLEM STATEMENT            -->
+        <!-- ======================================== -->
+        <section id="problem" class="section fade-in problem-box">
+
+            <div class="problem-flex">
+
+                <!-- LEFT IMAGE -->
+                <div class="problem-left">
+                    <img src="assets/image/problem.jpg" alt="Hydropower Valve">
+                </div>
+
+                <!-- RIGHT TEXT -->
+                <div class="problem-right">
+
+                    <h2 class="section-title-inline">What Did it Solve?</h2>
+
+                                        <div class="ignition-description">
+
+                        <p>
+                            <strong>Dynamic spark energy control:</strong> Precise ignition timing keeps small internal-combustion engines stable while rapid RPM changes and low battery voltage normally weaken the spark; fixed dwell modules fall behind, causing misfires and unreliable operation.
+                        </p>
+
+                        <p>
+                            <strong>Real-time crank sync:</strong> Lightweight ECUs drift at high RPM when they process the encoder sequentially; multi-cylinder scheduling and safe dwell windows require an interrupt-driven, deterministic approach.
+                        </p>
+
+                        <p><strong>We built a controller that can:</strong></p>
+
+                        <ul>
+                            <li><strong>Compute RPM + crank angle accurately</strong> via encoder capture in interrupts.</li>
+                            <li><strong>Auto-adjust dwell by RPM and VBAT</strong> to keep spark energy consistent.</li>
+                            <li><strong>Schedule multi-cylinder ignition precisely</strong> with scalable timing.</li>
+                            <li><strong>Enforce safety + observability</strong> with state machine control and diagnostics.</li>
+                        </ul>
+
+                        <p>
+                            <strong>State-machine-driven STM32 ECU:</strong> All timing-critical work runs in interrupts; timers and input-capture deliver low-jitter RPM, and dwell adapts to speed and voltage in real time.
+                        </p>
+
+                        <p>
+                            <strong>Safety-first firmware:</strong> STOPPED/CRANKING/RUNNING/FAULT states, watchdogs, stall detection, coil protection, and UART telemetry for RPM, dwell, and spark events.
+                        </p>
+
+                        <p>
+                            <strong>Outcome:</strong> a compact, reliable ignition controller ready for prototyping, engine testing, and embedded-systems experimentation.
+                        </p>
+
+                        </div>
+
+
+
+            </div>
+        </section>
+
+
+        <!-- ================== DEMO VIDEO ================== -->
+        <section id="demo-video" class="section fade-in video-box">
+            <h2 class="section-title">Visuals</h2>
+
+            <div class="video-container">
+                <a href="https://youtu.be/oaS5Xkfcu0M" target="_blank">
+                    <img class="video-thumb" 
+                        src="https://img.youtube.com/vi/oaS5Xkfcu0M/maxresdefault.jpg" 
+                        alt="Project Demo Video">
+
+                    <div class="play-button">&#9658;</div>
+                </a>
+            </div>
+        </section>
+
+        <section id="ecu-animation" class="section fade-in">
+            <h2 class="section-title">ECU Animation</h2>
+            <div class="animation-frame">
+                <iframe
+                src="animations/ecu_animation.html?view=visuals"
+                title="ECU animation and pseudo-code"
+                loading="lazy">
+                </iframe>
+            </div>
+        </section>
+
+
+
+
+        <!-- ======================================== -->
+        <!--         TOOLS & COMPONENTS SLIDER       -->
+        <!-- ======================================== -->
+        <section id="tools" class="section fade-in">
+            <h2 class="section-title">Tools & Components Used</h2>
+
+            <div class="slider-container">
+                <div class="slider" id="slider">
+
+                    <!-- Update filenames based on your folder -->
+                    <div class="slide">
+                        <img src="assets/image/tools/stm32_1.jpg" alt="STM32F407 MCU">
+                        <div class="label">STM32F407 MCU</div>
+                    </div>
+                    
+                    <div class="slide">
+                        <img src="assets/image/tools/leds.jpg" alt="RS485 Module">
+                        <div class="label">LEDS</div>
+                    </div>
+
+                    <div class="slide">
+                        <img src="assets/image/tools/enc_1.jpg" alt="Encoder">
+                        <div class="label">Quadrature Encoder</div>
+                    </div>
+
+                    <div class="slide">
+                        <img src="assets/image/tools/dcMot.jpg" alt="Encoder">
+                        <div class="label">DC Motor</div>
+                    </div>
+
+                    <div class="slide">
+                        <img src="assets/image/tools/pot.jpg" alt="Encoder">
+                        <div class="label">Potentiometer</div>
+                    </div>
+
+                    <div class="slide">
+                        <img src="assets/image/tools/ide_2.jpg" alt="Encoder">
+                        <div class="label">Cube IDE</div>
+                    </div>
+
+                </div>
+
+                <div class="dots" id="dots"></div>
+            </div>
+        </section>
+
+
+
+        <!-- ======================================== -->
+        <!--           FLOW DIAGRAM & SLIDES          -->
+        <!-- ======================================== -->
+        <section id="flow" class="section fade-in">
+            <h2 class="section-title">Conceptual Flow Diagram</h2>
+            <img src="assets/image/Slide3.JPG" class="proj-img" />
+        </section>
+
+        <section id="fw-flow" class="section fade-in">
+            <h2 class="section-title">Firmware Flow</h2>
+            <img src="assets/image/Slide7.JPG" class="proj-img" />
+        </section>
+
+        <section id="schematic_1" class="section fade-in">
+            <h2 class="section-title">Coil Control State Machine</h2>
+            <img src="assets/image/Slide8.JPG" class="proj-img" />
+        </section>
+
+        <section id="schematic_2" class="section fade-in">
+            <h2 class="section-title">Schematic Peripherials</h2>
+            <img src="assets/image/Slide4.JPG" class="proj-img" />
+        </section>
+
+        <section id="pcb" class="section fade-in">
+            <h2 class="section-title">PCB Design</h2>
+            <img src="assets/image/Slide5.JPG" class="proj-img" />
+        </section>
+
+        <section id="pcb-3d" class="section fade-in">
+            <h2 class="section-title">3D PCB View</h2>
+            <img src="assets/image/Slide6.JPG" class="proj-img" />
+        </section>
+
+        <section id="ecu-code" class="section fade-in">
+            <h2 class="section-title">Firmware Sample</h2>
+            <div class="animation-frame code-only">
+                <iframe
+                src="animations/ecu_animation.html?view=code"
+                title="Firmware sample pseudo-code"
+                loading="lazy">
+                </iframe>
+            </div>
+        </section>
+
+
+        <section id="fw-features" class="section fade-in">
+            <h2 class="section-title">Firmware Features</h2>
+            <img src="assets/image/Slide9.JPG" class="proj-img" />
+        </section>
+
+        <!-- <section id="modules" class="section fade-in">
+            <h2 class="section-title">Modules Overview</h2>
+            <img src="assets/image/Slide6.JPG" class="proj-img" />
+        </section> -->
+
+    </main>
+
+    <!-- JAVASCRIPT -->
+    <script src="assets/js/slider.js"></script>
+
+</body>
+</html>
+

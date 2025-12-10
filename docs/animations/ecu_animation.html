@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>ECU Animation Module</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<style>
+  :root {
+    --spark-color: #facc15;
+    --spark-glow:  #fef3c7;
+    --coil-on:     #22c55e;
+    --coil-off:    #4b5563;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                 "Segoe UI", sans-serif;
+    background: transparent;
+    color: #e5e7eb;
+  }
+
+  /* Light IDE-style overrides when in code-only view */
+  body.code-view {
+    background: #f6f8fb;
+    color: #111827;
+  }
+
+  body.code-view #ecu-anim-root {
+    background: transparent;
+    padding: 12px;
+  }
+
+  body.code-view .card {
+    background: #fdfefe;
+    border: 1px solid #d8dce5;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    color: #111827;
+  }
+
+  body.code-view .card-title,
+  body.code-view .card-chip,
+  body.code-view .code-line,
+  body.code-view .code-line-text,
+  body.code-view .code-line-num {
+    color: #111827;
+  }
+
+  body.code-view .card-chip {
+    background: #eef1f7;
+    border-color: #c9ced9;
+  }
+
+  body.code-view #code-container {
+    background: #f9fbff;
+    border: 1px solid #e1e5ee;
+    box-shadow: inset 0 1px 0 #fff;
+  }
+
+  body.code-view .code-line {
+    background: transparent;
+  }
+
+  body.code-view .code-line.active {
+    background: #e8f0ff;
+    color: #0f172a;
+    box-shadow: none;
+  }
+
+  #ecu-anim-root {
+    width: 100%;
+    padding: 16px 18px;
+    background: radial-gradient(circle at top, #0f172a 0, #020617 50%, #020617 100%);
+    border-radius: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+  }
+
+  .anim-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.1fr) minmax(0, 1.15fr);
+    gap: 16px;
+  }
+
+  .card {
+    background: radial-gradient(circle at top left, #111827 0, #020617 60%);
+    border-radius: 20px;
+    padding: 14px 16px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(55, 65, 81, 0.9);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #9ca3af;
+  }
+
+  .card-chip {
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.7);
+    background: rgba(15, 23, 42, 0.9);
+    color: #9ca3af;
+  }
+
+  /* ---------------- CODE PANEL ---------------- */
+
+  #code-container {
+    border-radius: 14px;
+    background: radial-gradient(circle at top left, #020617 0, #020617 60%);
+    border: 1px solid rgba(55, 65, 81, 0.9);
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                 "Liberation Mono", "Courier New", monospace;
+    font-size: 11px;
+    max-height: 500px;
+    overflow-y: auto;      /* <-- FIX */
+    overflow-x: hidden;
+    position: relative;
+}
+
+
+  .code-line {
+    padding: 2px 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: baseline;
+    white-space: pre;
+    color: #9ca3af;
+    transition: 0.11ms;
+  }
+
+  .code-line-num {
+    width: 18px;
+    margin-right: 8px;
+    text-align: right;
+    color: rgba(148, 163, 184, 0.7);
+  }
+
+  .code-line-text {
+    flex: 1;
+  }
+
+  .code-line.active {
+    background: radial-gradient(circle at left, rgba(56, 189, 248, 0.22), transparent);
+    color: #e5e7eb;
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
+    transform: translateX(2px);
+  }
+
+  /* ---------------- ECU PANEL ---------------- */
+
+  #ecu-svg {
+    display: block;
+    width: 100%;
+    height: 320px;
+    overflow: visible;
+  }
+
+  .spark-plug {
+    fill: #020617;
+    stroke: #cbd5e1;
+    stroke-width: 1.4;
+    transition: 0.15s ease;
+  }
+
+  .spark-tip {
+    fill: #9ca3af;
+    transition: 0.15s ease;
+  }
+
+  .spark-label {
+    fill: #9ca3af;
+    font-size: 9px;
+  }
+
+  .spark-active {
+    fill: var(--spark-glow);
+    stroke: var(--spark-color);
+    filter: drop-shadow(0 0 8px var(--spark-color));
+    transform: scale(1.08);
+  }
+
+  .spark-active-tip {
+    fill: var(--spark-color);
+  }
+
+  .spark-hidden {
+    opacity: 0;
+  }
+
+  .ecu-core {
+    fill: #020617;
+    stroke: #4b5563;
+    stroke-width: 1.6;
+  }
+
+  .ecu-core-glow {
+    stroke: rgba(56, 189, 248, 0.8);
+    stroke-width: 2;
+    stroke-dasharray: 7 4;
+    opacity: 0.6;
+  }
+
+  .ecu-text-main {
+    fill: #e5e7eb;
+    font-size: 12px;
+  }
+
+  .ecu-text-sub {
+    fill: #9ca3af;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .ecu-bus {
+    stroke: rgba(148, 163, 184, 0.9);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+
+  .encoder-circle {
+    fill: rgba(15, 23, 42, 0.8);
+    stroke: rgba(148, 163, 184, 0.6);
+    stroke-width: 1.2;
+  }
+
+  .encoder-dwell-arc {
+    fill: none;
+    stroke: rgba(56, 189, 248, 0.9);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  .encoder-pointer {
+    stroke: rgba(248, 250, 252, 0.95);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+  }
+
+  .encoder-label {
+    fill: #9ca3af;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+  }
+
+  /* ---------------- MONITOR PANEL ---------------- */
+
+  .monitor-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .metric-tile {
+    border-radius: 12px;
+    padding: 6px 8px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 1), rgba(8, 47, 73, 0.9));
+    border: 1px solid rgba(55, 65, 81, 0.9);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .metric-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9ca3af;
+  }
+
+  .metric-value {
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .metric-sub {
+    font-size: 9px;
+    color: #9ca3af;
+  }
+
+  .engine-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 10px;
+  }
+
+  .engine-pill {
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 197, 94, 0.8);
+    background: rgba(21, 128, 61, 0.2);
+    color: #bbf7d0;
+    font-size: 10px;
+  }
+
+  .engine-pill.bad {
+    border-color: rgba(248, 113, 113, 0.9);
+    background: rgba(153, 27, 27, 0.25);
+    color: #fecaca;
+  }
+
+  /* Coil outputs pills */
+
+  .coil-section {
+    border-radius: 12px;
+    padding: 8px 8px 6px;
+    border: 1px dashed rgba(55, 65, 81, 0.9);
+    background: radial-gradient(circle at top left, rgba(79, 70, 229, 0.18), transparent);
+    margin-bottom: 8px;
+  }
+
+  .coil-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9ca3af;
+    margin-bottom: 4px;
+  }
+
+  .coil-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .coil-pill {
+    border-radius: 9px;
+    padding: 4px 4px 5px;
+    background: rgba(15, 23, 42, 1);
+    border: 1px solid rgba(55, 65, 81, 0.95);
+    font-size: 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .coil-pill-id {
+    color: #9ca3af;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .coil-pill-bar {
+    position: relative;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(31, 41, 55, 1);
+    overflow: hidden;
+  }
+
+  .coil-pill-fill {
+    position: absolute;
+    inset: 0;
+    width: 0%;
+    background: linear-gradient(90deg, #22c55e, #eab308);
+    border-radius: inherit;
+    opacity: 0.1;
+    transition: width 0.18s ease-out, opacity 0.18s ease-out;
+  }
+
+  .coil-pill-fill.active {
+    width: 100%;
+    opacity: 1;
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.7);
+  }
+
+  /* Coil state timeline (FSM) */
+
+  .coil-state-section {
+    border-radius: 12px;
+    padding: 8px 8px 6px;
+    border: 1px dashed rgba(55, 65, 81, 0.9);
+    background: radial-gradient(circle at top right, rgba(8, 47, 73, 0.3), transparent);
+    margin-bottom: 8px;
+    max-height: auto;
+    overflow-y: auto;
+  }
+
+  .coil-state-header {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9ca3af;
+    margin-bottom: 4px;
+  }
+
+  .coil-state-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+    font-size: 9px;
+  }
+
+  .coil-state-label {
+    width: 40px;
+    color: #9ca3af;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .coil-state-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(31, 41, 55, 1);
+    overflow: hidden;
+    display: flex;
+  }
+
+  .coil-state-seg {
+    flex: 1;
+    opacity: 0.25;
+    transition: opacity 0.15s ease-out;
+  }
+
+  .seg-idle        { background: #4b5563; }
+  .seg-charging    { background: #22c55e; }
+  .seg-ignition    { background: #f97316; }
+
+  .coil-state-active {
+    opacity: 0.95;
+  }
+
+  /* Waveforms */
+
+  .monitor-graphs {
+    border-radius: 12px;
+    padding: 6px 8px 4px;
+    border: 1px solid rgba(55, 65, 81, 0.9);
+    background: radial-gradient(circle at bottom, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .wave-block {
+    height: 40px;
+  }
+
+  .wave-svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .wave-axis {
+    stroke: rgba(55, 65, 81, 0.9);
+    stroke-width: 0.6;
+  }
+
+  .wave-label {
+    fill: #9ca3af;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .wave-line-rpm {
+    fill: none;
+    stroke: #22c55e;
+    stroke-width: 1.4;
+  }
+
+  .wave-line-vbat {
+    fill: none;
+    stroke: #38bdf8;
+    stroke-width: 1.4;
+  }
+
+  .monitor-footnote {
+    margin-top: 4px;
+    font-size: 9px;
+    color: #9ca3af;
+  }
+
+  @media (max-width: 960px) {
+    .anim-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="ecu-anim-root">
+  <div class="anim-grid" id="anim-grid">
+
+    <!-- CODE PANEL -->
+    <section class="card" id="card-code">
+      <div class="card-header">
+        <div class="card-title">Firmware sample</div>
+        <div class="card-chip">State machine + scheduler</div>
+      </div>
+      <div id="code-container"></div>
+    </section>
+
+  <!-- ECU + ENCODER PANEL -->
+<section class="card" id="card-ecu">
+  <div class="card-header">
+    <div class="card-title">ECU &amp; spark sequence</div>
+    <div class="card-chip" id="ecu-mode-chip">4-cylinder mode</div>
+  </div>
+
+  <!-- NEW: encoder wheel separated -->
+  <div style="width:100%; display:flex; justify-content:center; margin-bottom:12px;">
+    <svg id="encoder-svg" viewBox="0 0 200 200" style="width:160px; height:160px;">
+      <g id="encoder-group" transform="translate(100,100)">
+        <circle r="62" class="encoder-circle"></circle>
+        <path id="encoder-dwell" class="encoder-dwell-arc" d=""></path>
+        <line id="encoder-pointer" class="encoder-pointer" x1="0" y1="0" x2="0" y2="-58"></line>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Original ECU SVG (unchanged except encoder removed) -->
+  <svg id="ecu-svg" viewBox="0 0 360 240">
+
+    <!-- ECU core -->
+    <rect x="135" y="90" width="90" height="60" rx="10" class="ecu-core"></rect>
+    <rect x="140" y="95" width="80" height="50" rx="9" class="ecu-core-glow"></rect>
+    <text x="180" y="118" text-anchor="middle" class="ecu-text-main">STM32F4 ECU</text>
+    <text x="180" y="132" text-anchor="middle" class="ecu-text-sub">IGNITION CONTROL</text>
+
+    <!-- bus lines -->
+    <line x1="180" y1="90" x2="180" y2="40" class="ecu-bus" />
+    <line x1="180" y1="150" x2="180" y2="200" class="ecu-bus" />
+    <line x1="80"  y1="40"  x2="280" y2="40"  class="ecu-bus" />
+    <line x1="80"  y1="200" x2="280" y2="200" class="ecu-bus" />
+
+    <!-- Spark plugs (inserted by JS) -->
+  </svg>
+
+  <div style="margin-top:6px;font-size:10px;color:#9ca3af;">
+    Encoder-synchronised firing order. Cylinder count and dwell are driven by
+    the same logic as the firmware.
+  </div>
+</section>
+
+
+    <!-- REAL-TIME MONITOR PANEL -->
+    <section class="card" id="card-monitor">
+      <div class="card-header">
+        <div class="card-title">Real-time monitor</div>
+        <div class="card-chip">Encoder × ADC × FSM</div>
+      </div>
+
+      <div class="monitor-metrics">
+        <div class="metric-tile">
+          <div class="metric-label">RPM</div>
+          <div class="metric-value" id="metric-rpm">0</div>
+          <div class="metric-sub">crankshaft speed</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-label">VBAT</div>
+          <div class="metric-value" id="metric-vbat">0.0&nbsp;V</div>
+          <div class="metric-sub">battery at coil</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-label">DWELL</div>
+          <div class="metric-value" id="metric-dwell">0.0&nbsp;ms</div>
+          <div class="metric-sub">coil charge window</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-label">MODE</div>
+          <div class="metric-value" id="metric-mode">4 cylinders</div>
+          <div class="metric-sub">from ignition table</div>
+        </div>
+      </div>
+
+      <div class="engine-row">
+        <span>Engine state</span>
+        <span class="engine-pill" id="engine-pill">RUNNING</span>
+      </div>
+
+      <!-- Coil outputs -->
+      <div class="coil-section">
+        <div class="coil-section-header">
+          <span>Coil outputs</span>
+          <span id="coil-active-label">Active: CYL 1</span>
+        </div>
+        <div class="coil-grid" id="coil-grid"></div>
+      </div>
+
+      <!-- Coil state machine timeline -->
+      <div class="coil-state-section">
+        <div class="coil-state-header">Coil state machine (IDLE / CHARGING / IGNITION)</div>
+        <div id="coil-state-list"></div>
+      </div>
+
+      <!-- Waveforms -->
+      <div class="monitor-graphs">
+        <div class="wave-block">
+          <svg id="wave-rpm" class="wave-svg" viewBox="0 0 200 40">
+            <line x1="0" y1="32" x2="200" y2="32" class="wave-axis"></line>
+            <text x="6" y="12" class="wave-label">RPM</text>
+            <polyline id="wave-rpm-poly" class="wave-line-rpm" points=""></polyline>
+          </svg>
+        </div>
+        <div class="wave-block">
+          <svg id="wave-vbat" class="wave-svg" viewBox="0 0 200 40">
+            <line x1="0" y1="32" x2="200" y2="32" class="wave-axis"></line>
+            <text x="6" y="12" class="wave-label">VBAT</text>
+            <polyline id="wave-vbat-poly" class="wave-line-vbat" points=""></polyline>
+          </svg>
+        </div>
+        <div class="monitor-footnote">
+          Waveforms are derived from the same simulated timing used to drive the spark sequence
+          and coil state machine.
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="ecu_animation.js"></script>
+</body>
+</html>

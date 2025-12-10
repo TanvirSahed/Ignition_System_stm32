@@ -1,0 +1,313 @@
+/* =================== BASE ====================== */
+body {
+    font-family: 'Inter', sans-serif;
+    background: #f5f7fc;
+    margin: 0;
+    padding: 0;
+    color: #2b2b2b;
+}
+
+h1, h2 {
+    font-family: 'Poppins', sans-serif;
+}
+
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+/* =================== HEADER ===================== */
+.header {
+    text-align: center;
+    padding: 40px 20px;
+    background: white;
+    border-bottom: 1px solid #e2e2e2;
+}
+
+.project-title {
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.project-subtitle {
+    font-size: 17px;
+    margin-bottom: 18px;
+}
+
+.header-btns {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 15px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.btn-primary {
+    background: #276ef1;
+    color: white;
+}
+
+.btn-secondary {
+    border: 1px solid #276ef1;
+    color: #276ef1;
+}
+
+/* =================== CONTENT ===================== */
+.content {
+    width: 90%;
+    max-width: 900px;
+    margin: auto;
+    padding: 40px 0;
+}
+
+.section {
+    margin-bottom: 70px;
+}
+
+.section-title {
+    font-size: 24px;
+    border-left: 4px solid #276ef1;
+    padding-left: 12px;
+    margin-bottom: 18px;
+}
+
+/* ===================== PROBLEM STATEMENT (UPDATED) ===================== */
+
+.problem-box {
+    background: white;
+    padding: 35px;
+    border-radius: 15px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+/* FLEX is removed — everything stacks vertically */
+.problem-flex {
+    display: block;
+}
+
+/* IMAGE moves to the top, centered */
+.problem-left {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.problem-left img {
+    max-width: 380px;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.10);
+    object-fit: cover;
+}
+
+/* TEXT CONTENT */
+.problem-right {
+    width: 100%;
+}
+
+.section-title-inline {
+    font-family: 'Poppins', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    border-left: 4px solid #276ef1;
+    padding-left: 12px;
+    margin-bottom: 18px;
+}
+
+/* Improved readability */
+.problem-right p,
+.problem-right ul {
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 12px;
+}
+
+.problem-right ul {
+    padding-left: 20px;
+}
+
+/* RESPONSIVE (optional, keeps visual harmony) */
+@media (max-width: 780px) {
+    .problem-left img {
+        max-width: 100%;
+    }
+}
+
+/* =================== Animation ===================== */
+#ecu-animation {
+    margin-top: 40px;
+}
+
+.animation-frame {
+    width: 100%;
+    min-height: 600px;
+    height: clamp(700px, 69vh, 900px);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    border: 1px solid #e2e2e2;
+    background: #020617;
+}
+
+.animation-frame iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+.animation-frame.code-only iframe {
+    min-height: 600px;
+    height: auto;
+}
+
+.animation-frame.code-only {
+    min-height: auto;
+    height: auto;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #d8dce5;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    border-radius: 12px;
+}
+
+@media (max-width: 780px) {
+    .animation-frame {
+        min-height: 760px;
+        height: clamp(920px, 104vh, 1220px);
+    }
+
+    .animation-frame.code-only {
+        min-height: auto;
+        height: auto;
+        padding: 10px;
+    }
+}
+
+
+/* =================== SLIDER ======================== */
+.slider-container {
+    overflow: hidden;
+}
+
+.slider {
+    display: flex;
+    gap: 18px;
+    transition: transform 0.5s ease;
+}
+
+.slide {
+    position: relative;
+    min-width: 260px;
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.slide img {
+    width: 100%;
+    height: 170px;
+    object-fit: contain;
+}
+
+.slide .label {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(0,0,0,0.7);
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+}
+
+.dots span {
+    width: 10px;
+    height: 10px;
+    background: #ccc;
+    border-radius: 50%;
+    margin: 5px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.dots .active {
+    background: #276ef1;
+    transform: scale(1.2);
+}
+
+/* =================== PROJECT IMAGES =============== */
+.proj-img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+/* =================== DEMO VIDEO SECTION =================== */
+
+.video-box {
+    margin-top: 40px;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 780px;
+    margin: auto;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    transition: 0.3s;
+}
+
+.video-container:hover {
+    transform: scale(1.01);
+}
+
+.video-thumb {
+    width: 100%;
+    display: block;
+    border-radius: 12px;
+}
+
+.play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 0, 0, 0.8);
+    border-radius: 50%;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 80px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: 0.25s ease;
+}
+
+.video-container:hover .play-button {
+    background: rgba(255, 0, 0, 1);
+    transform: translate(-50%, -50%) scale(1.1);
+}
